@@ -1,4 +1,4 @@
-# S3ftp
+# EM::FTPD::S3
 
 TODO: Write a gem description
 
@@ -6,7 +6,7 @@ TODO: Write a gem description
 
 Add this line to your application's Gemfile:
 
-    gem 's3ftp'
+    gem 'em-ftpd-s3'
 
 And then execute:
 
@@ -14,7 +14,7 @@ And then execute:
 
 Or install it yourself as:
 
-    $ gem install s3ftp
+    $ gem install em-ftpd-s3
 
 ## Usage
 
