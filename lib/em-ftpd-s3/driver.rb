@@ -16,35 +16,21 @@ module EM::FTPD::S3
 		end
 
 		def change_dir(path, &block)
-			path = translated_path(path)
+			bucket = get_bucket(path)
+			yield not bucket.nil?
 
-			found = false
-
-			begin 
-				bucket = AWS::S3::Bucket.find(path)
-				found = true
-			rescue AWS::S3::PermanentRedirect
-				found = false
-			end
-			yield found
 		end
 
 		def dir_contents(path, &block)
-			path = translated_path(path)
-
-			bucket = nil
-			begin 
-				bucket = AWS::S3::Bucket.find(path)
-			rescue AWS::S3::PermanentRedirect
-				bucket = nil
-			end
-			
+			bucket = get_bucket(path)
 			if bucket.nil?
 				yield nil
 			else
+				dirs = [] 
 				bucket.objects.each do |obj|
-					yield object_to_dir_item(obj)
+					dirs << s3object_to_dir_item(obj)
 				end
+				yield dirs
 			end
 		end
 
@@ -96,8 +82,19 @@ module EM::FTPD::S3
 			File.join("/", BUCKET_PREFIX, path)[1, 1024]
 		end
 
-		def object_to_dir_item(s3obj) 
+		def get_bucket(path)
+			path = translated_path(path)
+			bucket = nil
+			begin 
+				bucket = AWS::S3::Bucket.find(path)
+			rescue AWS::S3::PermanentRedirect
+				bucket = nil
+			end
+			return bucket
+		end
 
+		def s3object_to_dir_item(s3obj) 
+			
 		end
 
 	end
