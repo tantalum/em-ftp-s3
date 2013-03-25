@@ -28,7 +28,7 @@ module EM::FTPD::S3
 			else
 				dirs = [] 
 				bucket.objects.each do |obj|
-					dirs << s3object_to_dir_item(obj)
+					dirs << s3bucket_to_dir_item(obj)
 				end
 				yield dirs
 			end
@@ -52,11 +52,22 @@ module EM::FTPD::S3
 		end
 
 		def delete_file(path, &block)
-			# TODO: Implement this
+			s3obj = get_object(path)
+			if not s3obj.nil?
+				begin
+					s3obj.delete
+					yield true
+				rescue ResponseError
+					yield false
+				end
+			end
+			yield false
 		end
 
 		def delete_dir(path, &block)
-			# TODO: Implement this
+			#TODO: Surround this with the apporopriate begin/rescue block
+			AWS::S3::Bucket.delete(translate_path(path), :force => true)
+			yield true
 		end
 
 		def rename(from, to, &block)
@@ -64,7 +75,12 @@ module EM::FTPD::S3
 		end
 
 		def make_dir(path, &block)
-			# TODO: Implement this
+			begin
+				AWS::S3::Bucekt.create(translate_path(path))
+				yield true
+			rescue AWS::S3::BucketAlreadyExists
+				yield false
+			end
 		end
 
 		def put_file(path, tmp_file_path, &block)
@@ -93,8 +109,12 @@ module EM::FTPD::S3
 			return bucket
 		end
 
-		def s3object_to_dir_item(s3obj) 
-			
+		def s3bucket_to_dir_item(s3bucket) 
+			EM::FTPD::DirectoryItem.new(:name => s3bucket.name, :directory => true, :size => 0)
+		end
+
+		def s3object_to_dir_item(name, s3obj)
+			EM::FTPD::DirectoryItem.new(:name => s3obj.path, :size => s3obj.size)
 		end
 
 	end
