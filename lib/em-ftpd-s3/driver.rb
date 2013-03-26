@@ -17,7 +17,7 @@ module EM::FTPD::S3
 
 		def change_dir(path, &block)
 			bucket = get_bucket(path)
-			yield not bucket.nil?
+			yield (not bucket.nil?)
 
 		end
 
@@ -36,7 +36,7 @@ module EM::FTPD::S3
 
 		def authenticate(user, pass, &block)
 			# TODO: Implement this
-			yield true
+			yield false
 		end
 
 		def bytes(path, &block)
