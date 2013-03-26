@@ -1,0 +1,15 @@
+# VCR Configuratiob
+cassette_dir:   spec/fixtures/vcr_cassettes
+
+# S3 Access Info
+access_key:     AKIAJ2IGHZQHCSJYT22A
+secret_key:     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
+
+# User Configuration
+auth_file:      specs/fixtures/auth
+
+good_user:      good
+good_pass:      good
+
+bad_user:       bad
+bad_user:       bad
