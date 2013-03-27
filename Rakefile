@@ -22,8 +22,7 @@ RDoc::Task.new do |rdoc|
 	rdoc.title = "em-ftpd-s3"
 	rdoc.rdoc_dir = (ENV['CC_BUILD_ARTIFACTS'] || 'doc') + '/rdoc'
 	rdoc.rdoc_files.include('README.md')
-	rdoc.rdoc_files.include('CHANGELOG')
-	rdoc.rdoc_files.include('LICENSE')
+	rdoc.rdoc_files.include('LICENSE.txt')
 	rdoc.rdoc_files.include('lib/**/*.rb')
 	rdoc.options << "--inline-source"
 end
