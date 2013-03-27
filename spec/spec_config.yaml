@@ -6,10 +6,22 @@ access_key:     AKIAJ2IGHZQHCSJYT22A
 secret_key:     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
 
 # User Configuration
-auth_file:      specs/fixtures/auth
+auth_file:      spec/fixtures/auth
 
 good_user:      good
 good_pass:      good
 
 bad_user:       bad
-bad_user:       bad
+bad_pass:       bad
+
+# test files and directories
+remote_test_file:   test.txt
+invalid_remote_test_file: invalid.txt
+
+
+local_test_file:    spec/fixtures/test.txt
+invalid_local_test_file: invalid.txt
+
+remote_dir_name:    /test_dir
+invalid_remote_dir_name:    /invalid/directory/name
+
