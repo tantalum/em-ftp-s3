@@ -114,8 +114,6 @@ module EM::FTPD::S3
 		end
 
 		def make_dir(path, &block)
-			#TODO: Fix this to create a new object with a 'directory' signiture
-			# It's probably a good idea to use the the objects metadata
 			begin
 				AWS::S3::S3Object.store(translated_path(path), '', BUCKET_NAME)
 				obj = get_object(path)
@@ -138,8 +136,19 @@ module EM::FTPD::S3
 		end
 
 		def put_file_streamed(path, datasocket, &block)
-			# TODO: Implement this
-			yield nil
+			tpath = translated_path(path)
+			begin
+				AWS::S3::S3Object.store(tpath, datasocket, BUCKET_NAME)
+			rescue Exception => e
+				yield false
+				return
+			end
+			obj = get_object(path)
+			if obj.nil?
+				yield false
+			else
+				yield obj.size
+			end
 		end
 
 # ---------------------- HELPER FUNCTIONS --------------------------------------
