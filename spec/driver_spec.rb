@@ -181,7 +181,7 @@ describe EM::FTPD::S3::Driver, "Directories" do
 	it "Should delete valid directories" do 
 		with_cassette do
 			@driver.delete_dir(conf['remote_dir_name']) do |result|
-				result.shoudl eql(true)
+				result.should eql(true)
 			end
 		end
 	end
