@@ -1,6 +1,7 @@
 require 'em-ftpd-s3'
 require 'aws/s3'
 require 'csv'
+require 'time'
 
 # NOTICE: Should this be a configuration variable?
 PATH_PREFIX = "nabil"
@@ -25,7 +26,7 @@ module EM::FTPD::S3
 
 		def change_dir(path, &block)
 			object = get_object(path)
-			if directory?(object)
+			if directory?(object) || path == "/" #<-- TLD might not be marked as a directory
 				yield true
 			else
 				yield false
@@ -33,18 +34,18 @@ module EM::FTPD::S3
 		end
 
 		def dir_contents(path, &block)
-			folder = get_object(path)
-			if directory?(folder)
-				dirs = [] 
-				bucket.objects.each do |obj|
-					if child_of?(obj, path)
-						dirs << s3bucket_to_dir_item(obj)
-					end
+			bucket = get_bucket()
+			path = translated_path_with_slash(path)
+
+			dirs = []
+			bucket.objects(:prefix=>path).each do |obj|
+				if child_of?(obj, path)
+					dirs << s3object_to_dir_item(obj)
 				end
-				yield dirs
-			else
-				yield nil
 			end
+
+			yield dirs if not dirs.empty?
+			yield nil if dirs.empty?
 		end
 
 		def authenticate(user, pass, &block)
@@ -104,9 +105,11 @@ module EM::FTPD::S3
 
 		def rename(from, to, &block)
 			s3obj = get_object(from)
-			if not s3obj.nil?
+			path_to = translated_path(to)
+
+			if not s3obj.nil? and not directory?(s3obj)
 				# TODO: Surround with correct begin/rescue block
-				s3obj.rename(translated_path(to),BUCKET_NAME)
+				AWS::S3::S3Object.rename(s3obj.key, path_to, BUCKET_NAME, {})
 				yield true
 			else
 				yield false
@@ -135,29 +138,19 @@ module EM::FTPD::S3
 			end
 		end
 
-		def put_file_streamed(path, datasocket, &block)
-			tpath = translated_path(path)
-			begin
-				AWS::S3::S3Object.store(tpath, datasocket, BUCKET_NAME)
-			rescue Exception => e
-				yield false
-				return
-			end
-			obj = get_object(path)
-			if obj.nil?
-				yield false
-			else
-				yield obj.size
-			end
-		end
-
 # ---------------------- HELPER FUNCTIONS --------------------------------------
 		
 		def translated_path(path)
 			path = "" if path == "/"
 
 			path = File.join("/", PATH_PREFIX, path)[1, 1024]
-			path[1, path.length]
+			return path
+		end
+
+		def translated_path_with_slash(path)
+			path = translated_path(path)
+			path[path.length] = '/' if path[path.length-1] != "/"
+			return path
 		end
 
 		def get_object(path)
@@ -188,23 +181,31 @@ module EM::FTPD::S3
 			return false
 		end
 
-		def child_of(s3obj, path)
-			s3obj.path.starts_with(path)
+		def child_of?(s3obj, path)
+			path = File.join("/",BUCKET_NAME, path)
+			if s3obj.path.start_with?(path)
+				reduced_path = s3obj.path.gsub(path, '')
+				if not reduced_path.empty? and reduced_path.split('/').length == 1
+					return true
+				end
+			end
+			return false
 		end
 
 		def get_bucket()
 			return AWS::S3::Bucket.find(BUCKET_NAME)
 		end
 
-		def s3object_to_dir_item(path, s3obj)
-			name = File.basename(path)
-			di
-			if directory?(s3obj)
-				di = EM::FTPD::DirectoryItem.new(:name => name, :size => 0, :time => s3obj.date)
-			else
+		def s3object_to_dir_item(s3obj)
+			name = File.basename(s3obj.key)
+			time = Time.parse(s3obj.about['date'])
+			di = EM::FTPD::DirectoryItem.new(:name => name, :size => 0, :time => time)
+			if not directory?(s3obj)
 				# If the item is not a directory just assume it's a file 
 				# because it could be uploaded from another source and not have our metadata attached
-				di = EM::FTPD::DirectoryItem.new(:name => name, :size => s3obj.size, :time => s3obj.date)
+				di.size = s3obj.size
+			else
+				di.directory = true
 			end
 			return di
 		end
