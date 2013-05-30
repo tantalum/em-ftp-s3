@@ -18,7 +18,7 @@ end
 
 Then /^I should be able to download (.*)$/ do |name|
 	@driver.get_file(name) do |nbytes|
-		nbytes.should_not eql(false)
+		nbytes.should_not eql(nil)
 	end
 end
 
