@@ -37,15 +37,21 @@ module EM::FTPD::S3
 			bucket = get_bucket()
 			path = translated_path_with_slash(path)
 
-			dirs = []
-			bucket.objects(:prefix=>path).each do |obj|
-				if child_of?(obj, path)
-					dirs << s3object_to_dir_item(obj)
+			if not bucket.nil?
+				dirs = []
+				bucket.objects(:prefix=>path).each do |obj|
+					if child_of?(obj, path)
+						dirs << s3object_to_dir_item(obj)
+					end
 				end
-			end
 
-			yield dirs if not dirs.empty?
-			yield nil if dirs.empty?
+				yield dirs if not dirs.empty?
+				yield nil if dirs.empty?
+			else
+				# TODO: Need a better way of reporting errors
+				# But we are limited by the driver specs for em-ftpd
+				yield nil 
+			end
 		end
 
 		def authenticate(user, pass, &block)
@@ -158,7 +164,7 @@ module EM::FTPD::S3
 			begin
 				obj = AWS::S3::S3Object.find(path, BUCKET_NAME)
 				return obj
-			rescue AWS::S3::NoSuchKey
+			rescue 
 				return nil
 			end
 		end
@@ -193,7 +199,13 @@ module EM::FTPD::S3
 		end
 
 		def get_bucket()
-			return AWS::S3::Bucket.find(BUCKET_NAME)
+			bucket = nil
+			begin
+				bucket = AWS::S3::Bucket.find(BUCKET_NAME)
+			rescue 
+				bucket = nil
+			end
+			return bucket
 		end
 
 		def s3object_to_dir_item(s3obj)
