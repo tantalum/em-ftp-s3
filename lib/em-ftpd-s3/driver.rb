@@ -129,17 +129,29 @@ module EM::FTPD::S3
 				obj.metadata[:type] = OBJ_TYPE_DIR
 				obj.store()
 				yield true
-			rescue AWS::S3::InvalidBucketName
+			rescue
 				yield false
 			end
 		end
 
 		def put_file(path, tmp_file_path, &block)
-			path = translated_path(path)
+			tpath = translated_path(path)
 			begin
-				AWS::S3::S3Object.store(path, open(tmp_file_path), BUCKET_NAME)
-				yield File.size(tmp_file_path)
-			rescue Exception => e
+				AWS::S3::S3Object.store(tpath, open(tmp_file_path), BUCKET_NAME)
+				obj = get_object(path)
+				yield obj.size
+			rescue 
+				yield false
+			end
+		end
+
+		def put_file_streamed(path, stream, &block)
+			tpath = translated_path(path)
+			begin
+				AWS::S3::S3Object.store(tpath, stream, BUCKET_NAME)
+				obj = get_object(path)
+				yield obj
+			rescue
 				yield false
 			end
 		end
